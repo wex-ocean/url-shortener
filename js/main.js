@@ -770,6 +770,28 @@
     return { ok: true };
   }
 
+  // ---------- Bind UI ----------
+  function bindUI() {
+    // Theme
+    $("#themeToggle").on("click", toggleTheme);
+
+    // Open login
+    $(document).on("click", "#openLogin, #loginNudgeBtn, #dashboardLoginBtn", () => {
+      $("#loginError").addClass("hidden").text("");
+      $("#loginEmail").val(state.session?.email || "");
+      $("#loginName").val("");
+      openModal("#loginModal");
+    });
+
+    // Logout
+    $(document).on("click", "#logoutBtn", signOut);
+
+    // Modal close
+    $(document).on("click", "[data-close='true']", closeModal);
+    $(document).on("keydown", (e) => {
+      if (e.key === "Escape") closeModal();
+    });
+
     // Login submit
     $("#loginForm").on("submit", (e) => {
       e.preventDefault();
