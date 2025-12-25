@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Modern URL Shortener</title>
+
+    <!-- Tailwind CDN (config must come BEFORE the CDN script) -->
+    <script>
+      tailwind = {
+        config: {
+          darkMode: "class",
+          theme: {
+            extend: {
+              boxShadow: {
+                soft: "0 10px 30px rgba(2, 6, 23, 0.08)",
+                softDark: "0 10px 30px rgba(0, 0, 0, 0.35)",
+              },
+            },
+          },
+        },
+      };
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="stylesheet" href="./css/style.css" />
+  </head>
+
+  <body
+    class="min-h-full bg-slate-50 text-slate-900 antialiased selection:bg-indigo-200/70 selection:text-slate-900 dark:bg-slate-950 dark:text-slate-100"
+  >
+    <!-- Top Nav -->
+    <header class="sticky top-0 z-40 border-b border-slate-200/70 bg-white/75 backdrop-blur dark:border-slate-800/70 dark:bg-slate-950/65">
+      <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+        <div class="flex items-center gap-3">
+          <a href="#shorten" class="group inline-flex items-center gap-2">
+            <div class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-indigo-500 to-fuchsia-500 text-white shadow-soft dark:shadow-softDark">
+              <!-- link icon -->
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M10.5 13.5L13.5 10.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M7 17a4 4 0 010-6l2-2a4 4 0 016 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M17 7a4 4 0 010 6l-2 2a4 4 0 01-6 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="leading-tight">
+              <div class="text-sm font-semibold tracking-tight">Shortly</div>
+              <div class="text-xs text-slate-500 dark:text-slate-400">Modern URL shortener</div>
+            </div>
+          </a>
+
+          <nav class="ml-5 hidden items-center gap-1 md:flex">
+            <a class="navlink" href="#shorten">Shorten</a>
+            <a class="navlink" href="#dashboard">Dashboard</a>
+          </nav>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <!-- Theme toggle -->
+          <button
+            id="themeToggle"
+            class="btn-secondary"
+            type="button"
+            aria-label="Toggle dark mode"
+          >
+            <span class="inline-flex items-center gap-2">
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M21 13.2A7.5 7.5 0 1110.8 3 6 6 0 0021 13.2z"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              <span class="hidden sm:inline">Theme</span>
+            </span>
+          </button>
+
+          <!-- Session area -->
+          <div id="sessionArea" class="flex items-center gap-2">
+            <button id="openLogin" class="btn-primary" type="button">Sign in</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="mx-auto max-w-6xl px-4 py-8">
+      <!-- Hero / Landing -->
+      <section id="shorten" class="scroll-mt-24">
+        <div class="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-soft dark:border-slate-800 dark:bg-slate-900/40 dark:shadow-softDark md:p-10">
+          <div class="pointer-events-none absolute inset-0 opacity-[0.55] dark:opacity-[0.35]">
+            <div class="absolute -left-24 -top-24 h-64 w-64 rounded-full bg-indigo-300 blur-3xl"></div>
+            <div class="absolute -right-24 -bottom-24 h-64 w-64 rounded-full bg-fuchsia-300 blur-3xl"></div>
+          </div>
+
+          <div class="relative">
+            <div class="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+              <div>
+                <h1 class="text-2xl font-semibold tracking-tight md:text-3xl">Short links that look premium.</h1>
+                <p class="mt-2 max-w-2xl text-sm text-slate-600 dark:text-slate-300">
+                  Custom slugs, copy-to-clipboard, click tracking, expiry, enable/disable, analytics, and a dashboard — all frontend-only.
+                </p>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <div id="userPill" class="hidden items-center gap-2 rounded-2xl border border-slate-200 bg-white/70 px-3 py-2 text-sm text-slate-700 shadow-sm dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-200">
+                  <span class="inline-flex h-6 w-6 items-center justify-center rounded-xl bg-indigo-600 text-xs font-bold text-white">U</span>
+                  <span id="userEmail" class="max-w-[220px] truncate"></span>
+                </div>
+                <a href="#dashboard" class="btn-secondary">Open dashboard</a>
+              </div>
+            </div>
+
+            <form id="shortenForm" class="mt-7 grid gap-4 md:grid-cols-12" autocomplete="off" novalidate>
+              <div class="md:col-span-7">
+                <label class="label" for="longUrl">Long URL</label>
+                <div class="relative">
+                  <input
+                    id="longUrl"
+                    name="longUrl"
+                    type="text"
+                    inputmode="url"
+                    placeholder="https://example.com/some/very/long/path"
+                    class="input"
+                    required
+                  />
+                  <div class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-slate-400">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M10.5 13.5L13.5 10.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                      <path d="M7 17a4 4 0 010-6l2-2a4 4 0 016 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                      <path d="M17 7a4 4 0 010 6l-2 2a4 4 0 01-6 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                </div>
+                <p id="urlError" class="mt-1 hidden text-xs text-rose-600"></p>
+              </div>
+
+              <div class="md:col-span-5">
+                <label class="label" for="customSlug">Custom alias (optional)</label>
+                <input
+                  id="customSlug"
+                  name="customSlug"
+                  type="text"
+                  placeholder="my-brand"
+                  class="input"
+                  aria-describedby="slugHint"
+                />
+                <div class="mt-1 flex items-center justify-between gap-3">
+                  <p id="slugHint" class="text-xs text-slate-500 dark:text-slate-400">
+                    Letters, numbers, dashes. 3–32 chars.
+                  </p>
+                  <p id="slugStatus" class="text-xs font-medium"></p>
+                </div>
+              </div>
+
+              <div class="md:col-span-4">
+                <label class="label" for="expiresAt">Expiration (optional)</label>
+                <input id="expiresAt" name="expiresAt" type="datetime-local" class="input" />
+                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Auto-disables after expiry.</p>
+              </div>
+
+              <div class="md:col-span-4">
+                <label class="label" for="enabled">Status</label>
+                <div class="flex h-[42px] items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 dark:border-slate-800 dark:bg-slate-950/20">
+                  <span class="text-sm text-slate-700 dark:text-slate-200">Enable link</span>
+                  <label class="switch">
+                    <input id="enabled" name="enabled" type="checkbox" checked />
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="md:col-span-4">
+                <label class="label opacity-0" aria-hidden="true">Action</label>
+                <button id="shortenBtn" class="btn-primary w-full" type="submit">
+                  <span class="inline-flex items-center justify-center gap-2">
+                    <span class="btn-text">Shorten URL</span>
+                    <span class="btn-spinner hidden" aria-hidden="true">
+                      <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" opacity="0.25" />
+                        <path d="M21 12a9 9 0 00-9-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                      </svg>
+                    </span>
+                  </span>
+                </button>
+              </div>
+            </form>
+
+            <!-- Result preview -->
+            <div id="resultCard" class="mt-6 hidden rounded-3xl border border-slate-200 bg-white/80 p-5 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/25">
+              <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div class="min-w-0">
+                  <div class="text-xs text-slate-500 dark:text-slate-400">Your short link</div>
+                  <a
+                    id="resultShortUrl"
+                    href="#"
+                    class="mt-1 block truncate text-sm font-semibold text-indigo-700 underline decoration-indigo-300 underline-offset-4 hover:decoration-indigo-500 dark:text-indigo-300"
+                  ></a>
+                  <div class="mt-2 text-xs text-slate-500 dark:text-slate-400">Destination</div>
+                  <div id="resultLongUrl" class="truncate text-sm text-slate-700 dark:text-slate-200"></div>
+                </div>
+
+                <div class="flex shrink-0 items-center gap-2">
+                  <button id="copyResultBtn" type="button" class="btn-secondary" disabled>
+                    <span class="inline-flex items-center gap-2">
+                      <svg class="copy-icon h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M8 8h10v12H8V8z" stroke="currentColor" stroke-width="2" />
+                        <path d="M6 16H5a1 1 0 01-1-1V5a1 1 0 011-1h10a1 1 0 011 1v1" stroke="currentColor" stroke-width="2" />
+                      </svg>
+                      <span class="copy-text">Copy</span>
+                    </span>
+                  </button>
+
+                  <a href="#dashboard" class="btn-primary">Manage links</a>
+                </div>
+              </div>
+            </div>
+
+            <div id="loginNudge" class="mt-6 hidden rounded-3xl border border-indigo-200 bg-indigo-50 p-5 text-sm text-indigo-900 dark:border-indigo-900/40 dark:bg-indigo-950/30 dark:text-indigo-100">
+              <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <div class="font-semibold">Sign in to keep links separated per user.</div>
+                  <div class="text-indigo-800/80 dark:text-indigo-200/80">This app simulates accounts using localStorage.</div>
+                </div>
+                <button id="loginNudgeBtn" class="btn-primary" type="button">Sign in</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Dashboard -->
+      <section id="dashboard" class="mt-10 scroll-mt-24">
+        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-soft dark:border-slate-800 dark:bg-slate-900/40 dark:shadow-softDark md:p-8">
+          <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <h2 class="text-xl font-semibold tracking-tight">Dashboard</h2>
+              <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                Search, filter, copy, edit, disable, delete, and view analytics.
+              </p>
+            </div>
+
+            <div class="grid gap-2 sm:grid-cols-2 md:flex md:items-center">
+              <div class="relative">
+                <input id="searchInput" type="text" class="input pr-9" placeholder="Search slug or URL…" />
+                <div class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-slate-400">
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M11 18a7 7 0 110-14 7 7 0 010 14z" stroke="currentColor" stroke-width="2"/>
+                  </svg>
+                </div>
+              </div>
+
+              <select id="statusFilter" class="input">
+                <option value="all">All statuses</option>
+                <option value="active">Active</option>
+                <option value="disabled">Disabled</option>
+                <option value="expired">Expired</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="dashboardGate" class="mt-6 hidden rounded-3xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-950/30 dark:text-slate-200">
+            <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <div>
+                <div class="font-semibold">Sign in to view your dashboard.</div>
+                <div class="text-slate-600 dark:text-slate-300">Your links are scoped to the current session user.</div>
+              </div>
+              <button id="dashboardLoginBtn" class="btn-primary" type="button">Sign in</button>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div id="linksWrap" class="mt-6">
+            <div class="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
+              <table class="min-w-full text-left text-sm">
+                <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:bg-slate-950/40 dark:text-slate-400">
+                  <tr>
+                    <th class="px-4 py-3">Short URL</th>
+                    <th class="px-4 py-3">Original URL</th>
+                    <th class="px-4 py-3">Clicks</th>
+                    <th class="px-4 py-3">Status</th>
+                    <th class="px-4 py-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="linksTbody" class="divide-y divide-slate-200 dark:divide-slate-800"></tbody>
+              </table>
+            </div>
+
+            <div id="emptyState" class="mt-6 hidden rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center dark:border-slate-700 dark:bg-slate-950/20">
+              <div class="mx-auto max-w-md">
+                <div class="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-white shadow-sm dark:bg-slate-900">
+                  <svg class="h-6 w-6 text-slate-500 dark:text-slate-300" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M10.5 13.5L13.5 10.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M7 17a4 4 0 010-6l2-2a4 4 0 016 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M17 7a4 4 0 010 6l-2 2a4 4 0 01-6 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <div class="mt-3 text-sm font-semibold">No links yet</div>
+                <div class="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                  Create your first short link above. It will appear here with analytics and controls.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Toast Host -->
+    <div id="toastHost" class="fixed bottom-4 right-4 z-50 flex w-[calc(100%-2rem)] max-w-md flex-col gap-2"></div>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+      <div class="modal-overlay" data-close="true"></div>
+      <div class="modal-panel" role="document">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h3 id="loginTitle" class="text-lg font-semibold">Sign in</h3>
+            <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">Simulated auth — stored locally in your browser.</p>
+          </div>
+          <button class="icon-btn" type="button" data-close="true" aria-label="Close">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+
+        <form id="loginForm" class="mt-5 grid gap-3" autocomplete="off" novalidate>
+          <div>
+            <label class="label" for="loginEmail">Email</label>
+            <input id="loginEmail" type="email" class="input" placeholder="you@company.com" required />
+            <p id="loginError" class="mt-1 hidden text-xs text-rose-600"></p>
+          </div>
+
+          <div>
+            <label class="label" for="loginName">Name (optional)</label>
+            <input id="loginName" type="text" class="input" placeholder="Alex" />
+          </div>
+
+          <button class="btn-primary mt-2" type="submit">Continue</button>
+
+          <p class="text-xs text-slate-500 dark:text-slate-400">
+            Tip: open in an incognito window to simulate another user.
+          </p>
+        </form>
+      </div>
+    </div>
+
+    <!-- Analytics Modal -->
+    <div id="analyticsModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="analyticsTitle">
+      <div class="modal-overlay" data-close="true"></div>
+      <div class="modal-panel" role="document">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h3 id="analyticsTitle" class="text-lg font-semibold">Analytics</h3>
+            <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">Local click simulation and metadata.</p>
+          </div>
+          <button class="icon-btn" type="button" data-close="true" aria-label="Close">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="mt-5 grid gap-3 text-sm">
+          <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/30">
+            <div class="text-xs text-slate-500 dark:text-slate-400">Short URL</div>
+            <a id="amShortUrl" class="mt-1 block truncate font-semibold text-indigo-700 underline decoration-indigo-300 underline-offset-4 dark:text-indigo-300" href="#"></a>
+          </div>
+
+          <div class="grid gap-3 md:grid-cols-2">
+            <div class="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950/15">
+              <div class="text-xs text-slate-500 dark:text-slate-400">Clicks</div>
+              <div id="amClicks" class="mt-1 text-2xl font-semibold tracking-tight">0</div>
+            </div>
+
+            <div class="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950/15">
+              <div class="text-xs text-slate-500 dark:text-slate-400">Status</div>
+              <div id="amStatus" class="mt-2 inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"></div>
+            </div>
+          </div>
+
+          <div class="grid gap-3 md:grid-cols-2">
+            <div class="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950/15">
+              <div class="text-xs text-slate-500 dark:text-slate-400">Created</div>
+              <div id="amCreated" class="mt-1 font-medium"></div>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950/15">
+              <div class="text-xs text-slate-500 dark:text-slate-400">Expires</div>
+              <div id="amExpires" class="mt-1 font-medium"></div>
+            </div>
+          </div>
+
+          <div class="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950/15">
+            <div class="text-xs text-slate-500 dark:text-slate-400">Destination</div>
+            <div id="amOriginal" class="mt-1 break-words font-medium"></div>
+          </div>
+
+          <div class="mt-2 flex items-center justify-end gap-2">
+            <button id="amCopyBtn" class="btn-secondary" type="button">Copy short URL</button>
+            <button class="btn-primary" type="button" data-close="true">Done</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+      <div class="modal-overlay" data-close="true"></div>
+      <div class="modal-panel" role="document">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h3 id="editTitle" class="text-lg font-semibold">Edit link</h3>
+            <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">Update destination, slug, expiry, and status.</p>
+          </div>
+          <button class="icon-btn" type="button" data-close="true" aria-label="Close">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+
+        <form id="editForm" class="mt-5 grid gap-3" autocomplete="off" novalidate>
+          <input id="editId" type="hidden" />
+
+          <div>
+            <label class="label" for="editLongUrl">Destination URL</label>
+            <input id="editLongUrl" type="text" class="input" required />
+            <p id="editUrlError" class="mt-1 hidden text-xs text-rose-600"></p>
+          </div>
+
+          <div>
+            <label class="label" for="editSlug">Slug</label>
+            <input id="editSlug" type="text" class="input" required />
+            <div class="mt-1 flex items-center justify-between gap-3">
+              <p class="text-xs text-slate-500 dark:text-slate-400">Must be unique across all links.</p>
+              <p id="editSlugStatus" class="text-xs font-medium"></p>
+            </div>
+          </div>
+
+          <div class="grid gap-3 md:grid-cols-2">
+            <div>
+              <label class="label" for="editExpiresAt">Expiration</label>
+              <input id="editExpiresAt" type="datetime-local" class="input" />
+            </div>
+
+            <div>
+              <label class="label" for="editEnabled">Enabled</label>
+              <div class="flex h-[42px] items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 dark:border-slate-800 dark:bg-slate-950/20">
+                <span class="text-sm text-slate-700 dark:text-slate-200">Enable link</span>
+                <label class="switch">
+                  <input id="editEnabled" type="checkbox" />
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-2 flex items-center justify-end gap-2">
+            <button class="btn-secondary" type="button" data-close="true">Cancel</button>
+            <button class="btn-primary" type="submit">Save changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="./js/main.js"></script>
+  </body>
+</html>
